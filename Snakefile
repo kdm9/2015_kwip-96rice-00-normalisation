@@ -13,17 +13,22 @@ Ns = ['1']
 rule all:
     input:
         expand("data/kwip/{run}-k{k}x{x}N{N}-{metric}.dist", k=Ks, x=Xs, N=Ns,
-               rn=SRRs, metric=METRICS),
-        expand("data/kwip/{run}.stat", run=SRRs),
+               run=SRRs, metric=METRICS),
+        expand("data/kwip/{run}-k{k}x{x}N{N}-entvec.dist", k=Ks, x=Xs, N=Ns,
+               run=SRRs),
 
 
-rule ilfq:
+rule hash:
     input:
-        "data/sra/{run}.sra"
+        "sra/{run}.sra"
     output:
-        temp("data/reads/{run}_il.fastq.gz")
+        "data/hashes/{run}-k{k}x{x}N{N}.ct.gz"
     log:
-        "data/log/fastq/{run}.log"
+        "data/log/hashes/{run}-k{k}x{x}N{N}.log"
+    params:
+        x=lambda w: w.x,
+        N=lambda w: w.N,
+        k=lambda w: w.k,
     shell:
         "fastq-dump "
         "    --split-spot "
@@ -39,30 +44,16 @@ rule ilfq:
         "    -q 28 "
         "    -l 40 "
         "    -t sanger "
-        "    -M {output}"
+        "    -M /dev/stdout "
         "    >> {log} 2>&1 "
-
-
-rule hash:
-    input:
-        "data/reads/{run}_il.fastq.gz"
-    output:
-        "data/hashes/{run}-k{k}x{x}N{N}.ct.gz"
-    params:
-        x=lambda w: w.x,
-        N=lambda w: w.N,
-        k=lambda w: w.k,
-    log:
-        "data/log/hashes/{run}-k{k}x{x}N{N}.log"
-    shell:
-        "load-into-counting.py"
+        "| load-into-counting.py"
         " -N {params.N}"
         " -x {params.x}"
         " -k {params.k}"
         " -b"
         " -s tsv"
         " {output}"
-        " {input}"
+        " -"
         " >{log} 2>&1"
 
 
@@ -75,7 +66,7 @@ rule kwip:
     params:
         metric= lambda w: '-U' if w.metric == 'ip' else ''
     log:
-        "data/log/kwip/{rn}-k{k}x{x}N{N}-{metric}.log"
+        "data/log/kwip/{run}-k{k}x{x}N{N}-{metric}.log"
     threads:
         24
     shell:
@@ -94,7 +85,7 @@ rule kwip_stats:
     output:
         "data/kwip/{run}-k{k}x{x}N{N}.stat",
     log:
-        "data/log/kwip-entvec/{rn}-k{k}x{x}N{N}.log"
+        "data/log/kwip/{run}-k{k}x{x}N{N}-entvec.log"
     threads:
         24
     shell:
