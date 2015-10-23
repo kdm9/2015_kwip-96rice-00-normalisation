@@ -12,10 +12,9 @@ Ns = ['1']
 
 rule all:
     input:
-        expand("data/kwip/{run}-k{k}x{x}N{N}-{metric}.dist", k=Ks, x=Xs, N=Ns,
-               run=SRRs, metric=METRICS),
-        expand("data/kwip/{run}-k{k}x{x}N{N}-entvec.dist", k=Ks, x=Xs, N=Ns,
-               run=SRRs),
+        expand("data/kwip/k{k}x{x}N{N}-{metric}.dist", k=Ks, x=Xs, N=Ns,
+               metric=METRICS),
+        expand("data/kwip/k{k}x{x}N{N}-entvec.dist", k=Ks, x=Xs, N=Ns),
 
 
 rule hash:
@@ -59,14 +58,14 @@ rule hash:
 
 rule kwip:
     input:
-        "data/hashes/{run}-k{k}x{x}N{N}.ct.gz"
+        expand("data/hashes/{run}-k{{k}}x{{x}}N{{N}}.ct.gz", run=SRRs),
     output:
-        d="data/kwip/{run}-k{k}x{x}N{N}-{metric}.dist",
-        k="data/kwip/{run}-k{k}x{x}N{N}-{metric}.kern"
+        d="data/kwip/k{k}x{x}N{N}-{metric}.dist",
+        k="data/kwip/k{k}x{x}N{N}-{metric}.kern"
     params:
         metric= lambda w: '-U' if w.metric == 'ip' else ''
     log:
-        "data/log/kwip/{run}-k{k}x{x}N{N}-{metric}.log"
+        "data/log/kwip/k{k}x{x}N{N}-{metric}.log"
     threads:
         24
     shell:
@@ -81,11 +80,11 @@ rule kwip:
 
 rule kwip_stats:
     input:
-        "data/hashes/{run}-k{k}x{x}N{N}.ct.gz"
+        expand("data/hashes/{run}-k{{k}}x{{x}}N{{N}}.ct.gz", run=SRRs),
     output:
-        "data/kwip/{run}-k{k}x{x}N{N}.stat",
+        "data/kwip/k{k}x{x}N{N}.stat",
     log:
-        "data/log/kwip/{run}-k{k}x{x}N{N}-entvec.log"
+        "data/log/kwip/k{k}x{x}N{N}-entvec.log"
     threads:
         24
     shell:
